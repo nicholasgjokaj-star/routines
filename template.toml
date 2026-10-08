@@ -1,0 +1,116 @@
+# Machine-readable manifest for this template. The sibling
+# template.md holds the prose, the Requirements list, and the two
+# append-only history logs; this file is authoritative for everything
+# below. Both are generated together -- validate_template.py fails if
+# they disagree.
+format = "v2"
+
+[template]
+slug = "routines"
+title = "Routines"
+description = "One window showing everything in your workspace that runs on its own. Every scheduled task is picked up automatically, with nothing to set up, and shows its schedule, whether it is working, when it last ran, and whether that run was automatic or manual -- with fix, pause, and reschedule controls."
+thumbnail = "template.svg"
+version = "v1"
+
+# How this template is DERIVED from the workspace it came from. An
+# update re-runs this recipe rather than diffing two repos, which is what
+# keeps an exclusion excluded even though the thing still exists upstream.
+[recipe]
+include = ["system/apps/routines", "system/supervisord.conf.d/routines.conf", "AGENTS.md"]
+data_include = []
+exclude = [
+    "data/.apps/routines -- the publisher's own run history (runs.jsonl and in-flight run markers); personal data, never shipped",
+    "the publisher's cron entries and job state (/etc/cron.d, data/.state/cron.d, data/.state/jobs) -- discovered live in each workspace, not part of the app",
+    "the publisher's own apps and automations that the catalog described -- only the Routines app itself is included",
+]
+modification_rules = [
+    "remove catalog descriptions of workspace-specific routines, keeping only the built-in workspace routines",
+    "replace workspace-specific example routines in tests and docstrings with neutral made-up ones",
+    "refresh the root uv.lock so it lists the routines workspace member",
+]
+
+# Everything an adopter must deal with before this is really theirs.
+# One list -- but each entry's KIND says how it is handled, because the
+# two are handled at different times by different mechanisms:
+#
+#   permission / secret / llm = ACTIVATION. The adopting agent acts on
+#   these FIRST and BY ITSELF, initiating each latchkey permission
+#   request and each secret request before asking the user anything.
+#   Every one of them must have a matching requires_ line in template.md
+#   and vice versa -- the validator checks that, because an adopter once
+#   never got prompted for a permission the app needed.
+#
+#   The [[requirements.secret]] entries below were AGGREGATED from the
+#   included apps' app.toml [[secrets]] and skills' SKILL.md secrets:
+#   declarations, plus every data/.secrets/<file>.env the snapshot's
+#   mcp-servers.json and supervisord programs run under. Fix a wrong one
+#   at its declaration, not here.
+#
+#   adaptation = worked through INTERACTIVELY with the user afterwards.
+#   Prose on both sides, so it is not cross-checked.
+#
+# FILL IN, e.g.:
+#   [[requirements.permission]]
+#   scope = "slack-api"
+#   permission = "slack-read-all"
+#
+#   [requirements.llm]
+#   method = "keyed"   # keyed (an API key, e.g. ANTHROPIC_API_KEY) | keyless (a subscription CLI, e.g. claude -p)
+#
+#   [[requirements.adaptation]]
+#   summary = "the digest channel is hardcoded"
+#   resolution = "ask the user which channel to watch"
+[requirements]
+
+[[requirements.adaptation]]
+summary = "the catalog only describes the built-in workspace routines"
+resolution = "add a [[job]] entry with a plain-English title and sentence for each routine the user cares about; undescribed ones still appear, tagged Not described yet"
+
+[[requirements.adaptation]]
+summary = "services that refresh on an internal timer are invisible until declared"
+resolution = "add a [[service]] entry (every_seconds, every, only_while_open, app, demo_env if it has a sample-data switch) for each such supervisord program"
+
+[[requirements.adaptation]]
+summary = "cron jobs created before adoption have no run history or automatic/manual tag"
+resolution = "rewrite each job's command to go through bin/record_run.py --job <id> --trigger scheduled -- <command>, via the manage-scheduled-tasks skill"
+
+[[requirements.adaptation]]
+summary = "the app listens on port 8082"
+resolution = "if another program already uses 8082, pick a free port and set it in routines.conf (--url and ROUTINES_PORT)"
+
+[[requirements.adaptation]]
+summary = "AGENTS.md carries the section that keeps the view complete"
+resolution = "if the adopter's AGENTS.md has drifted from the stock one, merge in only the Routines section instead of replacing the file"
+
+# What the included code needs INSTALLED. apt takes bare names: versions
+# are a function of the apt snapshot timestamp, so replaying names at the
+# adopter's timestamp yields versions consistent with the rest of their
+# environment. The other sources are not snapshot-pinned, so for them the
+# recorded version IS the pin (name = version).
+#
+# FILL IN from what the included code actually needs, e.g.:
+#   apt = ["poppler-utils"]
+#   [environment.npm_global]
+#   "@slack/cli" = "2.1.0"
+#   [environment.uv_tools]
+#   yt-dlp = "2026.7.1"
+#   [environment.cargo_crates]
+#   fd-find = "9.0.0"
+#
+# For an install with no package database (a URL-fetched binary, a browser),
+# ship a system/scripts/env.d/<NNNN>-<slug>-<name>.sh unit with NNNN >= 2000,
+# include it in the recipe above, and list it in env_d_units.
+[environment]
+apt = []
+env_d_units = []
+
+# Templates this agent used on the way to this one, oldest first.
+# A new manifest overrides its predecessor rather than accumulating
+# beside it; the commit hash is what keeps the superseded manifest
+# retrievable in the repo where it is authoritative.
+
+[[lineage]]
+slug = "inbox-digest-review"
+repo_url = "https://github.com/imbue-ai/inbox-digest-review-mind-template"
+commit = "0ed139f04fced96fb0e1a7fa01affa12957f8a0c"
+used_on = "2026-09-24"

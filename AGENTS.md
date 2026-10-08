@@ -196,6 +196,22 @@ See the `update-app` skill for details.
 
 For routine jobs that run on a cadence and then exit (backups, health checks, the weekly Caretaker -- off by default, see the enable-caretaker skill), use cron via the **`manage-scheduled-tasks`** skill rather than a supervisord program; and after building or editing any service, use the `check-app-errors` skill to scan `/var/log/supervisor/` for errors (a clean exit code does not mean the service is healthy).
 
+## Anything that runs on its own is shown in the Routines app
+
+`system/apps/routines/` is the user's single view of everything in this workspace that updates something without being asked: what its schedule is, whether it is working, when it last ran, and whether that run was automatic or manual. Two obligations follow, and both are small.
+
+- **Every scheduled job goes through the run recorder.** When you write a cron entry, wrap the command so each run is logged with what triggered it:
+
+  ```
+  ... run_job.sh <job-id> --every <N> python3 /home/user/workspace/system/apps/routines/bin/record_run.py --job <job-id> --trigger scheduled -- <the real command>
+  ```
+
+  The recorder is transparent -- it runs the command, echoes its output, and returns its exit code unchanged -- so `run_job.sh`'s catch-up and retry behavior is unaffected. Without it the job still *appears* in Routines (discovery reads `/etc/cron.d` directly, so adding, re-timing, pausing or deleting a job needs no edit anywhere else); what is lost is its run history and the automatic-vs-manual distinction.
+
+- **A service that refreshes on its own internal timer must declare itself**, in `system/apps/routines/src/routines/catalog.toml`, because a loop inside a process leaves no trace on disk for discovery to find. That is the one case that cannot be discovered. An app with no background loop needs no entry at all.
+
+The same file optionally supplies plain-English wording for a job. It is not a registry and nothing has to be listed there to appear -- an undescribed routine shows up labelled from its id and tagged "Not described yet" -- but a routine the user built deserves a sentence saying what it does for them.
+
 # Git
 
 Commit all your changes locally. Do not wait for user confirmation for anything before committing; there's no cost to having more commits in the history. Users may not care about git state in general and will oftentimes never instruct you to commit, so you should just commit every logical unit of work. It's okay if you make a commit whose changes you must later revert after feedback.

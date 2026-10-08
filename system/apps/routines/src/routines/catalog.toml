@@ -1,0 +1,39 @@
+# Plain-English labels for the routines this workspace runs.
+#
+# THIS FILE IS OPTIONAL POLISH, NOT A REGISTRY. Nothing has to be listed here
+# to show up in the Routines app: every scheduled job is discovered live from
+# /etc/cron.d, so a job added or re-timed by the manage-scheduled-tasks skill
+# appears (with its new cadence) on the next page load with no edit here. An
+# entry below only replaces the auto-generated label with better wording.
+#
+# The one case that DOES need an entry is a [[service]]: a long-running
+# supervisord program that refreshes something on its own clock, from inside
+# its own process. There is no file on disk that states that cadence, so it
+# cannot be discovered -- it has to be declared.
+#
+#   [[job]]     a scheduled job, keyed by the job id in its cron entry
+#   [[service]] a supervisord program that refreshes on its own internal timer
+#
+# Fields: id (required), title, what (one sentence, user-facing),
+#         every_seconds + every (services only: the internal refresh cadence),
+#         only_while_open (services only: true if it only ticks while a window
+#         is open on the app).
+
+[[job]]
+id = "caretaker"
+title = "Weekly check-up"
+what = "Looks over the workspace once a week and reports anything wrong."
+
+[[job]]
+id = "update-apply-recover"
+title = "Update recovery guard"
+what = "Puts the workspace back if a system update is interrupted."
+built_in = true
+locked = true
+
+[[service]]
+id = "host-backup"
+title = "Workspace backup"
+what = "Keeps a recoverable copy of everything in your workspace."
+every = "Continuous"
+built_in = true

@@ -1,0 +1,18 @@
+name = "routines"
+display_name = "Routines"
+icon = "icon.svg"
+priority = "user"
+program = "routines"
+
+# Seed the icon onto every new desktop too, not just the one it was added to.
+# "focus" so a second click raises the window already showing rather than
+# stacking another copy of a page there is only ever one useful view of.
+default_shortcut = {launch = "open", mode = "focus"}
+# Only answers requests, so the shell may stop it once no window shows it.
+stop_when_no_windows = true
+
+# How update-app boots a throwaway preview of this app: on a free port, over a
+# scratch copy of its data (see .agents/skills/update-app/scripts/preview_app.py).
+[preview]
+env = {ROUTINES_PORT = "{port:main}", ROUTINES_HOST = "{host}", ROUTINES_DATA_DIR = "{copy:data}"}
+copies = {data = "data/.apps/routines"}
